@@ -227,9 +227,9 @@ void* mem_resize(void* block, size_t size)
             current->isFree = false;
             current->size = size;
 
+            pthread_mutex_unlock(&lock);
             mem_free(ptr);
 
-            pthread_mutex_unlock(&lock);
             return current->memPtr;
         }
         current = current->nextBlock;
