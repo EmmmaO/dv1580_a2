@@ -114,32 +114,48 @@ void mem_free(void* block)
 
 void* mem_resize(void* block, size_t size)
 {
+    //printf("Trying to resize block...\n");
     if(!block || size < 0) return NULL;
+
+    pthread_mutex_lock(&lock);
 
     // Finds the block
     memoryBlock* ptr = firstBlock;
     memoryBlock* prev = NULL;
 
+
     while (ptr && ptr->memPtr != block)
     {
+        prev = ptr;
         ptr = ptr->nextBlock;
-        if(ptr->memPtr != block)
-            prev = ptr;
     }
 
     // Case: Block does not exist
-    if(!ptr) return NULL;
+    if(!ptr)
+    {
+        pthread_mutex_unlock(&lock);
+        return NULL;
+    }
 
     // Case: Does the memory pool have enough allocated memory?
-    if(allocatedMemory - ptr->size + size > totalSize) return NULL;
-
+    if(allocatedMemory - ptr->size + size > totalSize)
+    {
+        pthread_mutex_unlock(&lock);
+        return NULL;
+    }
     // Case: No change in size
-    if(ptr->size == size) return NULL;
+    if(ptr->size == size)
+    {
+        pthread_mutex_unlock(&lock);
+        return ptr->memPtr;
+    }
 
-    pthread_mutex_lock(&lock);
     // Case: ptr is bigger than new size, splitting the block
     if(ptr->size > size)
     {
+        allocatedMemory = allocatedMemory - ptr->size + size;
+
+        // Splitting block
         memoryBlock* newBlock = malloc(sizeof(memoryBlock));
         newBlock->memPtr = (char*)ptr->memPtr+size;
         newBlock->size = ptr->size-size;
@@ -148,55 +164,78 @@ void* mem_resize(void* block, size_t size)
 
         ptr->nextBlock = newBlock;
         ptr->size = size;
+
         pthread_mutex_unlock(&lock);
         return ptr->memPtr;
     }
 
     // Case: Ptr can merge with previous block
-    if(prev && prev->isFree)
+    if(prev && prev->isFree && (prev->size + ptr->size >= size))
     {
-        if(prev->size + ptr->size >= size)
+        allocatedMemory = allocatedMemory - ptr->size + size;
+
+        prev->nextBlock = ptr->nextBlock;
+        prev->size = size;
+        
+        // Splitting block
+        if(prev->size > size)
         {
-            prev->nextBlock = ptr->nextBlock;
-            prev->size = size;
-            if(prev->size + ptr->size > size)
-            {
-                memoryBlock* newBlock = malloc(sizeof(memoryBlock));
-                newBlock->memPtr = (char*)prev->memPtr+size;
-                newBlock->size = prev->size -size;
-                newBlock->isFree = true;
-                newBlock->nextBlock = ptr;
-                prev->nextBlock = newBlock;
-            }
-            pthread_mutex_unlock(&lock);
-            return prev->memPtr;
+            memoryBlock* newBlock = malloc(sizeof(memoryBlock));
+            newBlock->memPtr = (char*)prev->memPtr+size;
+            newBlock->size = prev->size -size;
+            newBlock->isFree = true;
+            newBlock->nextBlock = ptr->nextBlock;
+
+            prev->nextBlock = newBlock;
         }
+        pthread_mutex_unlock(&lock);
+        return prev->memPtr;
     }
 
 
     // Case: Ptr can merge with next block
-    if (ptr->nextBlock && ptr->nextBlock->isFree)
+    if (ptr->nextBlock && ptr->nextBlock->isFree && (ptr->size + ptr->nextBlock->size >= size))
     {
-        if(ptr->size + ptr->nextBlock->size >= size)
-        {
-            size_t blockSize = ptr->size + ptr->nextBlock->size; 
-            ptr->nextBlock = ptr->nextBlock->nextBlock;
-            ptr->size = size;
-            // Splitting the block if possible
-            if(blockSize > size)
-            {
-                memoryBlock* newBlock = malloc(sizeof(memoryBlock));
-                newBlock->memPtr = (char*)ptr->memPtr+size;
-                newBlock->size = ptr->size-size;
-                newBlock->isFree = true;
-                newBlock->nextBlock = ptr->nextBlock;
+        allocatedMemory =allocatedMemory- ptr->size + size;
 
-                ptr->nextBlock = newBlock;
-            }
-            pthread_mutex_unlock(&lock);
-            return ptr->memPtr;
+        ptr->nextBlock = ptr->nextBlock->nextBlock;
+        ptr->size = size;
+
+        // Splitting the block if possible
+        if(ptr->size> size)
+        {
+            memoryBlock* newBlock = malloc(sizeof(memoryBlock));
+            newBlock->memPtr = (char*)ptr->memPtr+size;
+            newBlock->size = ptr->size + ptr->nextBlock->size - size;
+            newBlock->isFree = true;
+            newBlock->nextBlock = ptr->nextBlock;
+
+            ptr->nextBlock = newBlock;
         }
+        pthread_mutex_unlock(&lock);
+        return ptr->memPtr;
     }
+
+    // // Case: Find suitable block
+    // memoryBlock* current = firstBlock;
+    // while(current)
+    // {
+    //     if(current->isFree && current->size >= size)
+    //     {
+    //         allocatedMemory = allocatedMemory - ptr->size + size;
+    //         memcpy(current->memPtr, ptr->memPtr, ptr->size);
+    //         current->isFree = false;
+    //         current->size = size;
+
+    //         mem_free(ptr);
+
+    //         pthread_mutex_unlock(&lock);
+    //         return current->memPtr;
+    //     }
+    //     current = current->nextBlock;
+    // }
+
+    // Nothing changed...
     pthread_mutex_unlock(&lock);
     return NULL;
 }
