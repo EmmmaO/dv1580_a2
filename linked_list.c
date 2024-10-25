@@ -1,6 +1,5 @@
 #include "linked_list.h"
 #include <stdio.h>
-#include "common_defs.h"
 
 size_t nrOfNodes = 0;
 pthread_mutex_t locker = PTHREAD_MUTEX_INITIALIZER;

@@ -216,24 +216,24 @@ void* mem_resize(void* block, size_t size)
         return ptr->memPtr;
     }
 
-    // // Case: Find suitable block
-    // memoryBlock* current = firstBlock;
-    // while(current)
-    // {
-    //     if(current->isFree && current->size >= size)
-    //     {
-    //         allocatedMemory = allocatedMemory - ptr->size + size;
-    //         memcpy(current->memPtr, ptr->memPtr, ptr->size);
-    //         current->isFree = false;
-    //         current->size = size;
+    // Case: Find suitable block
+    memoryBlock* current = firstBlock;
+    while(current)
+    {
+        if(current->isFree && current->size >= size)
+        {
+            allocatedMemory = allocatedMemory - ptr->size + size;
+            memcpy(current->memPtr, ptr->memPtr, ptr->size);
+            current->isFree = false;
+            current->size = size;
 
-    //         mem_free(ptr);
+            mem_free(ptr);
 
-    //         pthread_mutex_unlock(&lock);
-    //         return current->memPtr;
-    //     }
-    //     current = current->nextBlock;
-    // }
+            pthread_mutex_unlock(&lock);
+            return current->memPtr;
+        }
+        current = current->nextBlock;
+    }
 
     // Nothing changed...
     pthread_mutex_unlock(&lock);
