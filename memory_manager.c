@@ -123,7 +123,6 @@ void* mem_resize(void* block, size_t size)
     memoryBlock* ptr = firstBlock;
     memoryBlock* prev = NULL;
 
-
     while (ptr && ptr->memPtr != block)
     {
         prev = ptr;
@@ -227,9 +226,9 @@ void* mem_resize(void* block, size_t size)
             current->isFree = false;
             current->size = size;
 
+            ptr->isFree = true;
+            
             pthread_mutex_unlock(&lock);
-            mem_free(ptr);
-
             return current->memPtr;
         }
         current = current->nextBlock;
