@@ -30,7 +30,7 @@ test_mmanager: $(LIB_NAME)
 
 # Test target to run the linked list test program
 test_list: $(LIB_NAME) linked_list.o
-	$(CC) $(CFLAGS) -o test_linked_list linked_list.c test_linked_list.c -lm -L. -lmemory_manager $(LDFLAGS)
+	$(CC) $(CFLAGS) -o test_linked_list linked_list.c test_linked_list.c -lm -L. -lmemory_manager
 	cp test_linked_list test_linked_listCG
 #run tests
 run_tests: run_test_mmanager run_test_list
