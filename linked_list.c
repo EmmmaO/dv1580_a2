@@ -3,7 +3,7 @@
 #include "common_defs.h"
 
 size_t nrOfNodes = 0;
-pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t locker = PTHREAD_MUTEX_INITIALIZER;
 
 void list_init(Node** head, size_t size)
 {
@@ -18,7 +18,7 @@ void list_insert(Node** head, uint16_t data)
     newNode->data = data;
     newNode->next = NULL;
 
-    pthread_mutex_lock(&lock);
+    pthread_mutex_lock(&locker);
 
     Node* walker = *head;
     if(walker)
@@ -35,7 +35,7 @@ void list_insert(Node** head, uint16_t data)
         *head = newNode;
         nrOfNodes++;
     }
-    pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&locker);
     // printf("Node inserted successfully!\n");
 }
 
@@ -43,7 +43,7 @@ void list_insert_after(Node* prev_node, uint16_t data)
 {
     Node* newNode = mem_alloc(sizeof(Node));
     newNode->data = data;
-    pthread_mutex_lock(&lock);
+    pthread_mutex_lock(&locker);
     if(prev_node)
     {
         if (prev_node->next)
@@ -57,7 +57,7 @@ void list_insert_after(Node* prev_node, uint16_t data)
     }
     else
         printf("invalid prev_node");
-    pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&locker);
 
 }
 
@@ -66,7 +66,7 @@ void list_insert_before(Node** head, Node* next_to, uint16_t data)
     Node* newNode = mem_alloc(sizeof(Node));
     newNode->data = data;
     newNode->next = next_to;
-    pthread_mutex_lock(&lock);
+    pthread_mutex_lock(&locker);
     if(*head == next_to)
     {
         *head = newNode;
@@ -81,7 +81,7 @@ void list_insert_before(Node** head, Node* next_to, uint16_t data)
         }
         walker->next = newNode;
     }
-    pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&locker);
     nrOfNodes++;
 }
 
@@ -92,19 +92,19 @@ void list_delete(Node** head, uint16_t data)
         printf("No nodes to delete!");
     else if(toDel->data == data)
     {
-        pthread_mutex_lock(&lock);
+        pthread_mutex_lock(&locker);
         if(toDel->next)
             *head = toDel->next;
         else
             *head = NULL;
         mem_free(toDel);
-        pthread_mutex_unlock(&lock);
+        pthread_mutex_unlock(&locker);
 
     }
     else
     {
         Node* walker = *head;
-        pthread_mutex_lock(&lock);
+        pthread_mutex_lock(&locker);
 
         while(walker->next && walker->next->data != data)
             // if(walker->next->data == data)
@@ -118,7 +118,7 @@ void list_delete(Node** head, uint16_t data)
             walker->next = NULL;
 
         mem_free(toDel);
-        pthread_mutex_unlock(&lock);
+        pthread_mutex_unlock(&locker);
 
     }
 }
