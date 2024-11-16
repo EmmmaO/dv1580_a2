@@ -8,7 +8,7 @@ SRC = memory_manager.c
 OBJ = $(SRC:.c=.o)
 
 # Default target
-all: mmanager list test_mmanager test_list
+all: gitinfo mmanager list test_mmanager test_list
 
 # Rule to create the dynamic library
 $(LIB_NAME): $(OBJ)
@@ -18,6 +18,11 @@ $(LIB_NAME): $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+gitinfo:
+	@echo "const char *git_date = \"$(GIT_DATE)\";" > gitdata.h
+	@echo "const char *git_sha = \"$(GIT_COMMIT)\";" >> gitdata.h
+
+
 # Build the memory manager
 mmanager: $(LIB_NAME)
 
@@ -26,15 +31,15 @@ list: linked_list.o
 
 # Test target to run the memory manager test program
 test_mmanager: $(LIB_NAME)
-	$(CC) -o test_memory_manager test_memory_manager.c -lm -lpthread -L. -lmemory_manager
+	$(CC) $(CFLAGS) -o test_memory_manager test_memory_manager.c -L. -lmemory_manager
 
 # Test target to run the linked list test program
 test_list: $(LIB_NAME) linked_list.o
-	$(CC) $(CFLAGS) -o test_linked_list linked_list.c test_linked_list.c -lm -L. -lmemory_manager $(LDFLAGS)
-	cp test_linked_list test_linked_listCG
+	$(CC) $(CFLAGS) -o test_linked_list linked_list.c test_linked_list.c -L. -lmemory_manager
+
 #run tests
-run_tests: run_test_mmanager run_test_list
-	
+run_tests:n run_test_mmanager run_test_list
+
 # run test cases for the memory manager
 run_test_mmanager:
 	./test_memory_manager
