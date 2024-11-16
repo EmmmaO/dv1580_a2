@@ -15,18 +15,23 @@ memoryBlock* firstBlock;
 int allocatedMemory;
 int totalSize;
 
+pthread_mutexattr_t recursiveMutex;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 // Initalizes the memory pool
 void mem_init(size_t size)
 {
-    
     if(size < 0) return;
     // Allocates memory for the memory pool
     memoryPool = malloc(size);
 
     // Initializes the first memory block
     firstBlock = malloc(sizeof(memoryBlock));
+
+    pthread_mutexattr_init(&recursiveMutex);
+    pthread_mutexattr_settype(&recursiveMutex, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&lock, &recursiveMutex);
+
     firstBlock->memPtr = memoryPool;
     firstBlock->size = size;
     firstBlock->isFree = true;
