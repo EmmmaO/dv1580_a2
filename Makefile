@@ -38,15 +38,15 @@ test_list: $(LIB_NAME) linked_list.o
 	$(CC) $(CFLAGS) -o test_linked_list linked_list.c test_linked_list.c -L. -lmemory_manager
 
 #run tests
-run_tests:n run_test_mmanager run_test_list
+run_tests: run_test_mmanager run_test_list
 
 # run test cases for the memory manager
 run_test_mmanager:
-	./test_memory_manager
+	LD_LIBRARY_PATH=. /test_memory_manager
 
 # run test cases for the linked list
 run_test_list:
-	./test_linked_list
+	LD_LIBRARY_PATH=. ./test_linked_list
 
 # Clean target to clean up build files
 clean:
