@@ -28,9 +28,9 @@ void mem_init(size_t size)
     // Initializes the first memory block
     firstBlock = malloc(sizeof(memoryBlock));
 
-    pthread_mutexattr_init(&recursiveMutex);
-    pthread_mutexattr_settype(&recursiveMutex, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&lock, &recursiveMutex);
+    // pthread_mutexattr_init(&recursiveMutex);
+    // pthread_mutexattr_settype(&recursiveMutex, PTHREAD_MUTEX_RECURSIVE_NP);
+    // pthread_mutex_init(&lock, &recursiveMutex);
 
     firstBlock->memPtr = memoryPool;
     firstBlock->size = size;
