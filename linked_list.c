@@ -1,7 +1,6 @@
 #include "linked_list.h"
 #include <stdio.h>
 
-size_t nrOfNodes = 0;
 pthread_mutex_t locker = PTHREAD_MUTEX_INITIALIZER;
 
 void list_init(Node** head, size_t size)
@@ -27,13 +26,9 @@ void list_insert(Node** head, uint16_t data)
             walker = walker->next;
         }
         walker->next = newNode;
-        nrOfNodes++;
     }
     else
-    {
         *head = newNode;
-        nrOfNodes++;
-    }
     pthread_mutex_unlock(&locker);
     // printf("Node inserted successfully!\n");
 }
@@ -52,12 +47,10 @@ void list_insert_after(Node* prev_node, uint16_t data)
         else
             newNode->next = NULL;
         prev_node->next = newNode;
-        nrOfNodes++;
     }
     else
         printf("invalid prev_node");
     pthread_mutex_unlock(&locker);
-
 }
 
 void list_insert_before(Node** head, Node* next_to, uint16_t data)
@@ -81,30 +74,25 @@ void list_insert_before(Node** head, Node* next_to, uint16_t data)
         walker->next = newNode;
     }
     pthread_mutex_unlock(&locker);
-    nrOfNodes++;
 }
 
 void list_delete(Node** head, uint16_t data)
-{
+{   
+    pthread_mutex_lock(&locker);
     Node* toDel = *head;
-    if(nrOfNodes == 0)
+    if(toDel == NULL)
         printf("No nodes to delete!");
     else if(toDel->data == data)
     {
-        pthread_mutex_lock(&locker);
         if(toDel->next)
             *head = toDel->next;
         else
             *head = NULL;
         mem_free(toDel);
-        pthread_mutex_unlock(&locker);
-
     }
     else
     {
         Node* walker = *head;
-        pthread_mutex_lock(&locker);
-
         while(walker->next && walker->next->data != data)
             // if(walker->next->data == data)
             //     break;
@@ -117,9 +105,8 @@ void list_delete(Node** head, uint16_t data)
             walker->next = NULL;
 
         mem_free(toDel);
-        pthread_mutex_unlock(&locker);
-
     }
+    pthread_mutex_unlock(&locker);
 }
 
 Node* list_search(Node** head, uint16_t data)
@@ -163,10 +150,23 @@ void list_display_range(Node** head, Node* start_node, Node* end_node)
     printf("]");
 }
 
-
 int list_count_nodes(Node** head)
 {
-    return nrOfNodes;
+    int counter = 0;
+    pthread_mutex_lock(&locker);
+    Node* current = *head;
+    if(current != NULL && current->next != NULL)
+    {
+        counter++;
+        while(current->next)
+        {
+            counter++;
+            current = current->next;
+        }
+    }
+    pthread_mutex_unlock(&locker);
+    printf("NODES: %d \n", counter);
+    return counter;
 }
 
 void list_cleanup(Node** head)
@@ -182,10 +182,18 @@ void list_cleanup(Node** head)
             Node* next = walker->next;
             
             mem_free(walker);
+
             walker = next;
         }
     }
     mem_deinit(*head);
-    nrOfNodes = 0;
     *head = NULL;
 }
+
+
+// int main()
+// {
+//     Node* head = NULL;
+//     list_init(&head, 0);
+//     return 0;
+// }
